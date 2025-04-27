@@ -14,7 +14,7 @@ import { Image } from "../../types";
 const App = () => {
   const [query, setQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<unknown>(false);
+  const [error, setError] = useState<unknown | null>(null);
   const [images, setImages] = useState<Image[]>([]);
   const [page, setPage] = useState<number>(1);
   const [modal, setModal] = useState<boolean>(false);
@@ -30,18 +30,16 @@ const App = () => {
   }
 
   useEffect(() => {
-    if (query === "") {
-      return;
-    }
+    if (query === "") return;
+
     const fetchData = async (): Promise<void> => {
       try {
         setLoading(true);
-        setError(false);
-        // setImages([]);
+        setError(null);
+
         const data: fetchDataInterface = await fetchImages(query, page);
         setImages((prevImages) => [...prevImages, ...data.results]);
         setIsVisible(page < data.total_pages);
-        console.log(data);
       } catch (error) {
         setError(error);
         toast.error("Whoops, something went wrong! Please try update page...");
@@ -49,14 +47,15 @@ const App = () => {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [query, page]);
 
   const onHandleSubmit = (newQuery: string): void => {
-    setQuery(`${Date.now()}/${newQuery}`);
+    setQuery(newQuery);
     setImages([]);
     setPage(1);
-    setError(false);
+    setError(null);
     setIsEmpty(false);
     setIsVisible(false);
   };
@@ -65,11 +64,11 @@ const App = () => {
     setPage((prevPage) => prevPage + 1);
   };
 
-  const openModal = (object: Image) => {
+  const openModal = (object: Image): void => {
     setModal(true);
     setUrl(object.urls.regular);
-    setAlt(object.alt_description);
-    setDescription(object.description);
+    setAlt(object.alt_description || "");
+    setDescription(object.description || "");
   };
 
   const closeModal = (): void => {
@@ -87,7 +86,7 @@ const App = () => {
       )}
       {isVisible && !loading && <LoadMoreBtn onClick={onLoadMore} />}
       {loading && <Loader />}
-      {!images.length && !isEmpty && <p>Let`s begin search...</p>}
+      {!images.length && !isEmpty && <p>Let's begin search...</p>}
       {error && <ErrorMessage />}
       <ImageModal
         url={url}
